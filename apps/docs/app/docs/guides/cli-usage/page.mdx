@@ -1,0 +1,29 @@
+---
+title: "CLI Usage"
+description: "CLI usage explains the commands and flags developers use to initialize, run, and debug the product."
+order: 70
+---
+
+# CLI Usage
+
+CLI usage explains the command-line mental model: which commands exist, when to use each command, which flags affect runtime behavior, and how the CLI discovers project configuration.
+
+## Run the workflow
+1. Install or run the CLI from the host project root.
+2. Choose the command that matches the task, such as starting the studio or initializing config.
+3. Pass flags for port, host, config path, watch mode, or other runtime behavior when defaults do not match the app.
+
+## Check first
+- Install dependencies with `pnpm install`.
+- Confirm the main workflow with `pnpm dev`.
+- Review required configuration before running commands that create or mutate data.
+
+## Commands
+- `dev`: `turbo watch dev --continue` starts the local development workflow.
+- `build`: `turbo run build` creates the production build or compiled package artifacts.
+- `auth:generate`: `pnpm -F @acme/auth generate` runs a repository-defined maintenance command.
+- `dev:next`: `turbo watch dev -F @acme/nextjs...` starts the local development workflow.
+- `typecheck`: `turbo run typecheck` runs static checks before build or release work continues.
+- `clean:workspaces`: `turbo run clean` removes generated artifacts so the next build starts from a clean state.
+
+No CLI options were found for this command yet.

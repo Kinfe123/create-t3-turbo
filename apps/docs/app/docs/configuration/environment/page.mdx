@@ -1,0 +1,26 @@
+---
+title: "Environment Variables"
+description: "Environment variables provide runtime secrets, URLs, provider settings, and deployment values."
+order: 50
+---
+
+# Environment Variables
+
+create-t3-turbo needs runtime values before commands, integrations, or deployed surfaces can start safely.
+
+## Runtime contract
+Keep these values outside source control, mirror the names from `.env.example` when present, and load them before starting local or production runtime.
+
+## Required environment variables
+- `AUTH_DISCORD_ID` - Preconfigured Discord OAuth provider, works out-of-the-box @see https://next-auth.js.org/providers/discord
+- `AUTH_SECRET` - You can generate the secret via 'openssl rand -base64 32' on Unix @see https://next-auth.js.org/configuration/options#secret
+- `BETTER_AUTH_URL` - The URL of your next js app
+- `POSTGRES_URL` - The database URL is used to connect to your Supabase database.
+- `AUTH_DISCORD_SECRET` - Set this when the related workflow requires it, and keep the value out of source control.
+- `NEXT_PUBLIC_CLIENTVAR` - Set this when the related workflow requires it, and keep the value out of source control.
+- `PORT` - Set this when the related workflow requires it, and keep the value out of source control.
+
+## Verify changes
+- Run `pnpm dev` after setting the variables.
+- Open the workflow, route, or command that depends on this configuration and confirm it reaches the expected state.
+- If setup fails, check missing variables, database connectivity, and adapter-specific settings before debugging application logic.

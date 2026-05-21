@@ -1,0 +1,47 @@
+---
+title: "Installation"
+description: "Install and configure create-t3-turbo."
+order: 20
+---
+
+# Installation
+
+Install the project dependencies first, then run the command or package script that proves create-t3-turbo is usable in this repository.
+
+## Install, configure, verify
+Installation has three jobs: install the package dependencies, provide the runtime configuration the project documents, and verify the command that exercises the main workflow.
+
+## Runtime inputs
+- Dependencies provide the framework, CLI, adapters, and runtime libraries used by the project.
+- Environment variables provide documented secrets, URLs, provider tokens, and deployment-specific behavior.
+- Scripts provide repeatable workflows for local development, production builds, tests, and release tasks.
+
+## Verify setup
+- Dependencies install with the package manager already used by the project.
+- Required environment variables are present before runtime commands are executed.
+- The primary command starts, builds, or verifies the project without needing undocumented manual steps.
+
+## Install Dependencies
+Run `pnpm install` from the project root.
+
+## Configure Environment Variables
+Copy `.env.example` into `.env` and fill in the required values before running the project.
+
+- `AUTH_DISCORD_ID` - Preconfigured Discord OAuth provider, works out-of-the-box @see https://next-auth.js.org/providers/discord
+- `AUTH_DISCORD_SECRET` - Set this when the related workflow requires it, and keep the value out of source control.
+- `AUTH_SECRET` - You can generate the secret via 'openssl rand -base64 32' on Unix @see https://next-auth.js.org/configuration/options#secret
+- `BETTER_AUTH_URL` - The URL of your next js app
+- `NEXT_PUBLIC_CLIENTVAR` - Set this when the related workflow requires it, and keep the value out of source control.
+- `PORT` - Set this when the related workflow requires it, and keep the value out of source control.
+- `POSTGRES_URL` - The database URL is used to connect to your Supabase database.
+
+## Run the project
+Use `pnpm dev` as the first local command for this repository.
+
+## Runtime coverage
+- Next.js
+
+## Repository scripts
+- `build`: `turbo run build` creates the production build or compiled package artifacts.
+- `dev`: `turbo watch dev --continue` starts the local development workflow.
+- `typecheck`: `turbo run typecheck` runs static checks before build or release work continues.

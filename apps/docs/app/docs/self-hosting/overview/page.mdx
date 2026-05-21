@@ -1,0 +1,40 @@
+---
+title: "Self-Hosting Overview"
+description: "Self-hosting explains how to run the product inside infrastructure you control."
+order: 120
+---
+
+# Self-Hosting Overview
+
+Self-hosting explains how to run the product inside infrastructure you control.
+
+## Production setup
+Self-hosting explains how the package runs inside or next to a user's own application. It clarifies which pieces are required at runtime, how the host app mounts the product, and what infrastructure must be available in production.
+
+## Install and run
+Install create-t3-turbo as a runtime dependency when production imports it. For standalone container usage, mount the real Better Auth project so Studio can load its auth config and project dependencies.
+
+## Deployment checklist
+1. Install dependencies with `pnpm install` before building or packaging the runtime.
+2. Provide the auth config path, database access, secrets, and allowed origins required by the hosted surface.
+3. Run `pnpm dev` locally before promoting the same configuration to preview or production.
+4. Verify the mounted route, API handler, or container can reach the same database and auth configuration as the host app.
+
+## Project notes
+Let's deploy the Next.js application to Vercel. If you've never deployed a Turborepo app there, don't worry, the steps are quite straightforward.
+
+## Files to check
+- `apps/expo/src/utils/auth.ts` (product) - Product runtime configuration.
+- `packages/api/src/router/auth.ts` (product) - Product runtime configuration.
+- `packages/auth/src/auth.ts` (product) - Product runtime configuration.
+- `packages/db/drizzle.config.ts` (database) - Database schema or adapter configuration.
+- `apps/nextjs/next.config.js` (framework) - Next.js application configuration.
+- `packages/ui/components.json` (ui) - shadcn/ui component aliases and project structure.
+
+## Environment Variables
+- `AUTH_SECRET` - You can generate the secret via 'openssl rand -base64 32' on Unix @see https://next-auth.js.org/configuration/options#secret
+- `NEXT_PUBLIC_CLIENTVAR` - Set this when the related workflow requires it, and keep the value out of source control.
+- `BETTER_AUTH_URL` - The URL of your next js app
+- `AUTH_DISCORD_ID` - Preconfigured Discord OAuth provider, works out-of-the-box @see https://next-auth.js.org/providers/discord
+- `POSTGRES_URL` - The database URL is used to connect to your Supabase database.
+- `PORT` - Set this when the related workflow requires it, and keep the value out of source control.
