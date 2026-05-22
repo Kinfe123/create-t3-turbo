@@ -1,40 +1,76 @@
 ---
 title: "Self-Hosting Overview"
-description: "Self-hosting explains how to run the product inside infrastructure you control."
-order: 120
+description: "Deploy create-t3-turbo's Next.js app to Vercel, configure Better Auth for production, and prepare the Expo app to reach your live backend."
+order: 100
 ---
 
 # Self-Hosting Overview
 
-Self-hosting explains how to run the product inside infrastructure you control.
+create-t3-turbo runs as two separate surfaces in production: the Next.js application that serves both the web UI and the API, and the Expo app that communicates with that backend. Each surface has its own deployment path, and a few pieces of configuration must be updated before either works outside your local machine.
 
-## Production setup
-Self-hosting explains how the package runs inside or next to a user's own application. It clarifies which pieces are required at runtime, how the host app mounts the product, and what infrastructure must be available in production.
+## Deploy the Next.js app to Vercel
 
-## Install and run
-Install create-t3-turbo as a runtime dependency when production imports it. For standalone container usage, mount the real Better Auth project so Studio can load its auth config and project dependencies.
+Vercel is the path of least resistance for a Turborepo monorepo. The steps are:
 
-## Deployment checklist
-1. Install dependencies with `pnpm install` before building or packaging the runtime.
-2. Provide the auth config path, database access, secrets, and allowed origins required by the hosted surface.
-3. Run `pnpm dev` locally before promoting the same configuration to preview or production.
-4. Verify the mounted route, API handler, or container can reach the same database and auth configuration as the host app.
+1. Create a new project on Vercel and select `apps/nextjs` as the root directory. Vercel's zero-config system handles the build pipeline automatically.
+2. Add your `POSTGRES_URL` environment variable so the Drizzle client can reach your database.
+3. Assign your domain. The Expo app will need this URL to reach the backend when it is not running in development.
 
-## Project notes
-Let's deploy the Next.js application to Vercel. If you've never deployed a Turborepo app there, don't worry, the steps are quite straightforward.
+The `@acme/api` package must remain a **production** dependency only in the Next.js app. The Expo app and any other client apps should list it as a dev dependency only — this keeps backend code out of client bundles while preserving full type safety across the monorepo.
 
-## Files to check
-- `apps/expo/src/utils/auth.ts` (product) - Product runtime configuration.
-- `packages/api/src/router/auth.ts` (product) - Product runtime configuration.
-- `packages/auth/src/auth.ts` (product) - Product runtime configuration.
-- `packages/db/drizzle.config.ts` (database) - Database schema or adapter configuration.
-- `apps/nextjs/next.config.js` (framework) - Next.js application configuration.
-- `packages/ui/components.json` (ui) - shadcn/ui component aliases and project structure.
+## Configure Better Auth for production
 
-## Environment Variables
-- `AUTH_SECRET` - You can generate the secret via 'openssl rand -base64 32' on Unix @see https://next-auth.js.org/configuration/options#secret
-- `NEXT_PUBLIC_CLIENTVAR` - Set this when the related workflow requires it, and keep the value out of source control.
-- `BETTER_AUTH_URL` - The URL of your next js app
-- `AUTH_DISCORD_ID` - Preconfigured Discord OAuth provider, works out-of-the-box @see https://next-auth.js.org/providers/discord
-- `POSTGRES_URL` - The database URL is used to connect to your Supabase database.
-- `PORT` - Set this when the related workflow requires it, and keep the value out of source control.
+By default, Better Auth is configured for the development environment. Before deploying, you must update `trustedOrigins` in the `auth` package to include every origin that is permitted to make requests to the auth server. For the Expo app, add your Expo scheme to that list and update `auth/src/expo.ts` to match — the scheme defaults to `"expo"`.
+
+Better Auth also ships with an Auth Proxy for OAuth providers in preview deployments. You do not need a separate server for this; the proxy is built in.
+
+The following environment variables must be present in your production environment:
+
+- `BETTER_AUTH_URL` — the public URL of your deployed Next.js app (e.g. `https://your-domain.com`).
+- `AUTH_SECRET` — a random secret string. Generate one with `openssl rand -base64 32`.
+- `AUTH_DISCORD_ID` and `AUTH_DISCORD_SECRET` — required if you are using the preconfigured Discord OAuth provider.
+- `POSTGRES_URL` — the connection string for your Supabase (or other Postgres-compatible) database.
+
+See [Environment Variables](/docs/configuration/environment) for the full variable reference.
+
+## Push the database schema
+
+Before the app can serve any authenticated requests, the Drizzle schema must be pushed to your production database:
+
+```bash
+pnpm db:push
+```
+
+This runs `turbo -F @acme/db push` and applies your schema to the database pointed to by `POSTGRES_URL`.
+
+## Deploy the Expo app
+
+Deploying an Expo app means submitting a production build to the Apple App Store or Google Play — not pushing to a server. Before building, update the `getBaseUrl` function in `apps/expo/src/utils/base-url.tsx` to return your backend's production URL instead of `localhost`.
+
+Set up EAS Build to create the native bundle without a local native toolchain:
+
+```bash
+# Install the EAS CLI
+pnpm add -g eas-cli
+
+# Log in with your Expo account
+eas login
+
+# Configure your Expo app
+cd apps/expo
+eas build:configure
+```
+
+Then create a production build for your target platform:
+
+```bash
+eas build --platform ios --profile production
+```
+
+If you omit `--profile`, EAS uses the `production` profile by default. Repeat with `--platform android` for an Android build.
+
+## Next steps
+
+- [Configuration](/docs/configuration) — all environment, database, and framework settings in one place.
+- [Environment Variables](/docs/configuration/environment) — complete variable reference with default values.
+- [Database](/docs/configuration/database) — schema setup, Drizzle config, and `pnpm db:push` details.

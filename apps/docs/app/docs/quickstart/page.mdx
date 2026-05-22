@@ -1,32 +1,77 @@
 ---
 title: "Quickstart"
-description: "Run create-t3-turbo with the current scripts and configuration."
-order: 10
+description: "Run create-t3-turbo for the first time."
 ---
 
 # Quickstart
 
-Use this quickstart to move from a fresh checkout to the first workflow that proves create-t3-turbo is configured and usable.
+Getting from a fresh clone to a running local stack takes four steps: install dependencies, copy environment variables, push the database schema, and start the dev servers. The entire workflow runs from the monorepo root with `pnpm`.
 
-## Prerequisites
-This project uses `pnpm` as its package manager.
-Environment-backed behavior is present, so configuration is part of the first-run path.
+## Check system requirements
 
-## Run locally
-1. Install dependencies with `pnpm install`.
-2. Copy `.env.example` to `.env` and set the required values.
-3. Run `pnpm dev` to exercise the main workflow.
+Before installing, confirm your toolchain matches the versions pinned in `package.json`:
 
-## Repository scripts
-These commands are useful after the first run because they are the repeatable workflows available in the project.
+- **Node.js** `>=20.16.0`
+- **pnpm** `^9.6.0`
 
-- `build`: `turbo run build` creates the production build or compiled package artifacts.
-- `dev`: `turbo watch dev --continue` starts the local development workflow.
-- `typecheck`: `turbo run typecheck` runs static checks before build or release work continues.
+Running an older version of either tool will cause install or build failures.
 
-## Next steps
-- [Configuration](/docs/configuration) - Runtime values, environment variables, deployment settings, and framework configuration.
-- [Database](/docs/configuration/database) - Database configuration explains persistence, schema, migrations, and runtime readiness.
-- [Environment Variables](/docs/configuration/environment) - Environment variables provide runtime secrets, URLs, provider settings, and deployment values.
-- [Guides](/docs/guides) - Task-oriented workflows that move readers from setup to a useful outcome.
-- [CLI Usage](/docs/guides/cli-usage) - CLI usage explains the commands and flags developers use to initialize, run, and debug the product.
+## Install dependencies
+
+```bash
+pnpm install
+```
+
+`pnpm install` also runs the `postinstall` script automatically, which calls `pnpm dlx sherif@latest` to lint workspace consistency across all packages.
+
+## Configure environment variables
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in the required values. At minimum you need:
+
+- `POSTGRES_URL` — the connection string for your Supabase (or compatible Postgres) database. The example value targets the Supabase pooler: `postgres://postgres.[USERNAME]:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?workaround=supabase-pooler.vercel`
+- `BETTER_AUTH_URL` — the base URL of your Next.js app, defaults to `http://localhost:3000`
+- `AUTH_SECRET` — a random secret for the auth layer; generate one with `openssl rand -base64 32`
+- `AUTH_DISCORD_ID` and `AUTH_DISCORD_SECRET` — credentials for the preconfigured Discord OAuth provider
+
+See [Environment Variables](/docs/configuration/environment) for a full reference of every variable and where each one is read.
+
+## Push the database schema
+
+```bash
+pnpm db:push
+```
+
+This runs `turbo -F @acme/db push`, which applies the Drizzle schema to your Postgres database. The schema includes tables for posts as well as the Better Auth tables (`user`, `session`, `account`, `verification`). Auth and post features will not work until the schema is present.
+
+## Start the development servers
+
+```bash
+pnpm dev
+```
+
+This runs `turbo watch dev --continue`, which starts all apps in the monorepo in watch mode. To start only the Next.js app and its dependencies, use:
+
+```bash
+pnpm dev:next
+```
+
+Once the servers are up, open `http://localhost:3000` to see the running Next.js app.
+
+## Open database Studio
+
+```bash
+pnpm db:studio
+```
+
+Runs `turbo -F @acme/db studio` to open Drizzle Studio in your browser — useful for inspecting schema and data without writing SQL.
+
+## What to do next
+
+- [Installation](/docs/installation) — prerequisites, package manager setup, and configuration in more detail.
+- [Database](/docs/configuration/database) — schema layout, migration workflow, and connection options.
+- [Environment Variables](/docs/configuration/environment) — every variable the project reads, where it is read, and what it controls.
+- [Self-Hosting](/docs/self-hosting) — deploying the Next.js app to Vercel and configuring Expo for production.

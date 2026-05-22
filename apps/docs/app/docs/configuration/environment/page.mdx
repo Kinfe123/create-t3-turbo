@@ -6,21 +6,60 @@ order: 50
 
 # Environment Variables
 
-create-t3-turbo needs runtime values before commands, integrations, or deployed surfaces can start safely.
+Before any server or dev process starts, create-t3-turbo validates the environment using [`@t3-oss/env-nextjs`](https://env.t3.gg). Missing or malformed values cause the build to fail early rather than surfacing as runtime errors. Copy `.env.example` to `.env` and fill in the values described below before running `pnpm dev` or `pnpm db:push`.
 
-## Runtime contract
-Keep these values outside source control, mirror the names from `.env.example` when present, and load them before starting local or production runtime.
+```bash
+cp .env.example .env
+```
 
-## Required environment variables
-- `AUTH_DISCORD_ID` - Preconfigured Discord OAuth provider, works out-of-the-box @see https://next-auth.js.org/providers/discord
-- `AUTH_SECRET` - You can generate the secret via 'openssl rand -base64 32' on Unix @see https://next-auth.js.org/configuration/options#secret
-- `BETTER_AUTH_URL` - The URL of your next js app
-- `POSTGRES_URL` - The database URL is used to connect to your Supabase database.
-- `AUTH_DISCORD_SECRET` - Set this when the related workflow requires it, and keep the value out of source control.
-- `NEXT_PUBLIC_CLIENTVAR` - Set this when the related workflow requires it, and keep the value out of source control.
-- `PORT` - Set this when the related workflow requires it, and keep the value out of source control.
+## Auth variables
 
-## Verify changes
-- Run `pnpm dev` after setting the variables.
-- Open the workflow, route, or command that depends on this configuration and confirm it reaches the expected state.
-- If setup fails, check missing variables, database connectivity, and adapter-specific settings before debugging application logic.
+These four variables are validated by `packages/auth/env.ts` and are required before Better Auth can accept or proxy any request.
+
+**`AUTH_SECRET`** — A random string used to sign session tokens. Generate one with:
+
+```bash
+openssl rand -base64 32
+```
+
+In production this variable must be set. In development it is optional but strongly recommended.
+
+**`BETTER_AUTH_URL`** — The full URL of your Next.js app, for example `http://localhost:3000`. Better Auth uses this to construct callback URLs and validate request origins. Update it to your production domain when deploying.
+
+**`AUTH_DISCORD_ID`** and **`AUTH_DISCORD_SECRET`** — Credentials for the preconfigured Discord OAuth provider. Both are required by `packages/auth/env.ts`. Obtain them from the Discord Developer Portal and keep them out of source control.
+
+## Database variable
+
+**`POSTGRES_URL`** — The connection string for your Postgres database. Both `packages/db/drizzle.config.ts` and `packages/db/src/client.ts` read this value directly. The `.env.example` ships with a Supabase pooler URL as a template:
+
+```
+POSTGRES_URL="postgres://postgres.[USERNAME]:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?workaround=supabase-pooler.vercel"
+```
+
+Replace the placeholder with your own connection string. After setting it, push the Drizzle schema:
+
+```bash
+pnpm db:push
+```
+
+## Next.js server and client variables
+
+`apps/nextjs/src/env.ts` extends the auth env schema and adds its own. `POSTGRES_URL` is validated here too, so the Next.js build will refuse to start if it is absent.
+
+The `NEXT_PUBLIC_CLIENTVAR` slot exists in the schema but is commented out by default. Uncomment it in both `apps/nextjs/src/env.ts` and `experimental__runtimeEnv` when you need to expose a value to the browser.
+
+`PORT` is read by `apps/nextjs/src/trpc/react.tsx` to construct the tRPC base URL when running outside a browser context. You do not need to set it explicitly for standard local development.
+
+## Expo and trusted origins
+
+When running the Expo app against a deployed backend, update `trustedOrigins` in the `auth` package to include your Expo scheme. By default the scheme is `"expo"`. See the README section on configuring Better Auth for Expo for the exact file to edit (`auth/src/expo.ts`).
+
+## Verify your setup
+
+After filling in `.env`, confirm everything is wired up correctly:
+
+```bash
+pnpm dev
+```
+
+If the Next.js app starts without a validation error, the required variables are present. If `pnpm db:push` succeeds, the database connection is working. For database details, see [Database](/docs/configuration/database).

@@ -1,13 +1,24 @@
 ---
 title: "Configuration"
-description: "Runtime values, environment variables, deployment settings, and framework configuration."
+description: "Environment, database, deployment, and framework settings required to run create-t3-turbo."
 order: 30
 ---
 
 # Configuration
 
-Configuration pages explain what needs to exist before create-t3-turbo runs in a new environment, what each value controls, and how to reason about credentials, defaults, deployment settings, and scale controls.
+Before create-t3-turbo can start, three things must be in place: a Postgres connection, a set of auth secrets, and the URL your Next.js app is reachable from. Everything else — Discord OAuth, public client variables, port overrides — is optional depending on what you're building.
 
-## Configuration pages
-- [Database](/docs/configuration/database) - Database configuration explains persistence, schema, migrations, and runtime readiness.
-- [Environment Variables](/docs/configuration/environment) - Environment variables provide runtime secrets, URLs, provider settings, and deployment values.
+The project validates all of these values at startup using `@t3-oss/env-nextjs`. If a required variable is missing or malformed, the build fails early rather than at runtime. Validation is skipped automatically in CI and during lint runs.
+
+## What needs to be configured
+
+**Database connection.** `POSTGRES_URL` is required by both `packages/db/src/client.ts` and `packages/db/drizzle.config.ts`. The `.env.example` ships a Supabase pooler URL as a reference. Set this before running `pnpm db:push` or starting the dev server.
+
+**Auth secrets.** `packages/auth/env.ts` requires `AUTH_SECRET`, `AUTH_DISCORD_ID`, `AUTH_DISCORD_SECRET`, and `BETTER_AUTH_URL`. `AUTH_SECRET` is optional in development but required in production — generate one with `openssl rand -base64 32`. `BETTER_AUTH_URL` should be the full URL of your Next.js app (e.g. `http://localhost:3000` locally).
+
+**Expo trusted origins.** When you deploy, you must add your Expo scheme to the `trustedOrigins` list in the `auth` package. The scheme defaults to `"expo"` and is configured in `auth/src/expo.ts`. Without this, auth requests from the mobile app will be rejected.
+
+## Where to go next
+
+- [Environment Variables](/docs/configuration/environment) — a full reference for every variable, where it is read, and what it controls.
+- [Database](/docs/configuration/database) — how the Drizzle schema is structured, how to push changes, and how to open Drizzle Studio.
