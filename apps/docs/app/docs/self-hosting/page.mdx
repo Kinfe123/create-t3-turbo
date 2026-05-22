@@ -1,0 +1,57 @@
+---
+title: "Self-Hosting"
+description: "Runtime and deployment setup for running create-t3-turbo in your own environment."
+order: 90
+---
+
+# Self-Hosting
+
+Running create-t3-turbo in production involves three distinct deployment surfaces: the Next.js application, the Expo mobile app, and the Better Auth layer that connects them. Each surface has different requirements, and getting the boundaries right before you go live avoids the most common integration failures.
+
+## What must be deployed first
+
+The Next.js application with tRPC must be deployed before the Expo app can communicate with the server in a production environment. The Expo app reads a `getBaseUrl` function that you must update to point at your backend's production URL; as long as it points at `localhost` the mobile app only works on a local network.
+
+## Deploy to Vercel
+
+Deploying the Next.js app to Vercel is the documented path for this monorepo. Create a new project on Vercel and select the `apps/nextjs` folder as the root directory. Vercel's zero-config system handles the Turborepo build pipeline automatically. Add your `DATABASE_URL` environment variable in the Vercel project settings, and the app will deploy. Assign your production domain and use that URL in the Expo app's `getBaseUrl` so the mobile client can reach your backend outside of local development.
+
+## Configure Better Auth for production
+
+Better Auth is preconfigured for local development. Before deploying, you need to add a `trustedOrigins` list in the `auth` package. This list controls which origins are permitted to make requests to the auth server. Add your Expo app's scheme to this list and update `auth/src/expo.ts` to match your scheme — the default scheme is `"expo"`.
+
+Better Auth also ships an Auth Proxy for OAuth providers in preview deployments. You do not need to run a separate server for this; the proxy is built into Better Auth itself.
+
+## Keep backend code out of client bundles
+
+The `@acme/api` package should be a production dependency only in the Next.js application. The Expo app, and any other apps you add to the monorepo, should list `@acme/api` as a dev dependency only. This arrangement gives client apps full TypeScript type safety through the tRPC router types while ensuring no server-only code is bundled for the client. If you need to share runtime code across the boundary — such as input validation schemas — create a separate shared package and import it from both sides.
+
+## Publish your Expo app
+
+Deploying an Expo app means submitting production builds to the Apple App Store or Google Play rather than hosting a server. Use EAS Build to create those builds without a full native development setup:
+
+```bash
+# Install the EAS CLI
+pnpm add -g eas-cli
+
+# Log in with your Expo account
+eas login
+
+# Configure your Expo app
+cd apps/expo
+eas build:configure
+```
+
+Once configured, build for your target platform:
+
+```bash
+eas build --platform ios --profile production
+```
+
+If you omit `--profile`, EAS uses the `production` profile by default.
+
+## Next step
+
+For a complete list of environment variables required at runtime — including `POSTGRES_URL`, `AUTH_SECRET`, `BETTER_AUTH_URL`, and the Discord OAuth credentials — see [Environment Variables](/docs/configuration/environment).
+
+For the full self-hosting walkthrough, including infrastructure prerequisites and auth configuration details, continue to [Self-Hosting Overview](/docs/self-hosting/overview).

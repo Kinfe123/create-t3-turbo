@@ -1,0 +1,70 @@
+---
+title: "Installation"
+description: "Install and configure create-t3-turbo."
+---
+
+# Installation
+
+Before you start, check the system requirements declared in `package.json#engines`. The project requires **Node.js ≥ 20.16.0** and **pnpm ^9.6.0**. If your environment does not meet those constraints, commands will fail in ways that are hard to diagnose.
+
+## Install dependencies
+
+From the repository root, run:
+
+```bash
+pnpm install
+```
+
+The `postinstall` hook runs `pnpm dlx sherif@latest` automatically to check workspace dependency consistency. You do not need to invoke it separately.
+
+## Copy the environment file
+
+A `.env.example` file at the repository root documents every variable the project reads at runtime. Copy it before running any other command:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and fill in the values described below.
+
+## Required environment variables
+
+**`POSTGRES_URL`** — Connection string for your Postgres database. The default in `.env.example` targets Supabase via the Vercel Postgres pooler. Replace it with your own connection string if you are using a different host.
+
+**`AUTH_SECRET`** — A random secret used by Better Auth for signing sessions. Generate one with:
+
+```bash
+openssl rand -base64 32
+```
+
+**`BETTER_AUTH_URL`** — The base URL of the Next.js app. The default is `http://localhost:3000` for local development.
+
+## Optional OAuth variables
+
+**`AUTH_DISCORD_ID`** and **`AUTH_DISCORD_SECRET`** enable the preconfigured Discord OAuth provider. Leave them empty if you are not using Discord sign-in; the app starts without them.
+
+## Push the database schema
+
+Once your `POSTGRES_URL` is set, push the Drizzle schema to your database:
+
+```bash
+pnpm db:push
+```
+
+This creates the tables that Better Auth and the posts feature require. Nothing in the app can read or write data until this step succeeds.
+
+## Verify the installation
+
+Start the full development stack from the repository root:
+
+```bash
+pnpm dev
+```
+
+This runs `turbo watch dev --continue`, which starts all workspace apps in watch mode. Open `http://localhost:3000` to confirm the Next.js app is serving. If you only want the Next.js app without the Expo dev server, use:
+
+```bash
+pnpm dev:next
+```
+
+Once the page loads, installation is complete. Continue to [Quickstart](/docs/quickstart) for the first-run walkthrough, or read [Configuration](/docs/configuration) for database, auth, and deployment settings.

@@ -1,0 +1,31 @@
+---
+title: "create-t3-turbo"
+description: "Learn what create-t3-turbo provides and where to start."
+---
+
+# create-t3-turbo
+
+create-t3-turbo is a fork of create-t3-app that replaces NextAuth with [Better Auth](https://better-auth.com). Its primary goal is to show how to split a T3 application into a Turborepo monorepo so that a Next.js web app, an Expo mobile app, and a set of shared packages can all live in one repository with a single `pnpm install`.
+
+## What the monorepo contains
+
+The repository is organized into two apps and several shared packages:
+
+- **`apps/nextjs`** — the Next.js web application. It serves the tRPC API routes, the Better Auth handler at `/api/auth/[...all]`, and the UI pages.
+- **`apps/expo`** — an Expo React Native app that connects to the same tRPC backend and uses the same Better Auth session.
+- **`packages/api`** — the tRPC router (`appRouter`) shared by both apps. The Expo app adds it as a dev dependency only, so no server code leaks to the client bundle.
+- **`packages/auth`** — Better Auth configuration (`auth`, `authClient`, `authMiddleware`) used across the web and mobile apps.
+- **`packages/db`** — Drizzle ORM schema and client, preconfigured for a Supabase Postgres database via the Vercel Postgres edge driver.
+- **`packages/ui`** — shared shadcn/ui components (`Button`, `DropdownMenu`, `Form`, and others) consumed by both apps.
+
+Turborepo orchestrates builds, dev servers, and type-checking across all of these workspaces from the repository root. The package manager throughout is `pnpm`, and the root `package.json` requires Node `>=20.16.0` and pnpm `^9.6.0`.
+
+## Replace `@acme` with your own name
+
+Every internal package uses `@acme` as a namespace placeholder. Before building anything production-facing, use find-and-replace across the repository to swap `@acme` for your own organization or project name (for example `@my-company`).
+
+## Where to go next
+
+If you are setting up the project for the first time, the [Quickstart](/docs/quickstart) walks through the shortest path to a running dev server, including copying `.env.example`, pushing the Drizzle schema, and starting all apps with `pnpm dev`.
+
+Once the basics are running, the [Configuration](/docs/configuration) section covers environment variables, the Postgres connection string, Better Auth secrets, and the Discord OAuth provider that ships pre-wired in `.env.example`. The [Self-Hosting](/docs/self-hosting) section explains how to deploy the Next.js app to Vercel and how to publish production Expo builds through EAS.

@@ -1,0 +1,61 @@
+---
+title: "Database"
+description: "Database configuration explains persistence, schema, migrations, and runtime readiness."
+order: 40
+---
+
+# Database
+
+The `@acme/db` package owns all persistence in this monorepo. It uses **Drizzle ORM** with a **PostgreSQL** dialect, and the schema is pushed directly to the database using Drizzle Kit rather than running SQL migration files.
+
+## How the database connects
+
+The database client reads `POSTGRES_URL` at startup. The Drizzle config in `packages/db/drizzle.config.ts` replaces the pooler port (`:6543`) with the direct connection port (`:5432`) before passing the URL to Drizzle Kit:
+
+```ts
+const nonPoolingUrl = process.env.POSTGRES_URL.replace(":6543", ":5432");
+```
+
+This swap is required because Drizzle Kit's schema push commands need a direct (non-pooled) connection. The runtime client used by the application continues to use the original pooled URL. If `POSTGRES_URL` is missing, the config throws immediately rather than failing silently at query time.
+
+## Required environment variable
+
+Set `POSTGRES_URL` before running any database or dev command. The `.env.example` shows the expected format for a Supabase connection:
+
+```
+POSTGRES_URL="postgres://postgres.[USERNAME]:[PASSWORD]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?workaround=supabase-pooler.vercel"
+```
+
+The `@acme/db` package is preconfigured for Supabase. If you switch to a different PostgreSQL provider, update `POSTGRES_URL` to match that provider's connection string and remove the Supabase pooler workaround query parameter if it is not needed.
+
+## Schema
+
+The schema lives in `packages/db/src/schema.ts` and covers both the application data (posts) and the Better Auth tables (user, session, account, verification). The auth schema tables are also re-exported from `packages/db/src/auth-schema.ts`. Both files use `snake_case` column naming, which matches the `casing: "snake_case"` setting in `drizzle.config.ts`.
+
+## Push the schema to the database
+
+After setting `POSTGRES_URL`, push the schema to your database:
+
+```bash
+pnpm db:push
+```
+
+This runs `turbo -F @acme/db push`, which invokes Drizzle Kit's push command against the direct connection URL. Run this step whenever you add or change table definitions. No separate migration files are generated — the schema in `packages/db/src/schema.ts` is the source of truth.
+
+## Open Drizzle Studio
+
+To browse and edit database records visually during development, run:
+
+```bash
+pnpm db:studio
+```
+
+This opens Drizzle Studio connected to your `POSTGRES_URL` database.
+
+## Switching database providers
+
+The `db` package is edge-bound and uses the Vercel Postgres driver by default. If you switch to a non-edge driver, the README notes that you should remove `export const runtime = "edge"` from all pages and API routes in `apps/nextjs`. Update the client in `packages/db/src/client.ts` and the Drizzle config dialect to match the new provider.
+
+---
+
+For the full list of environment variables the project reads, see [Environment Variables](/docs/configuration/environment). For deployment setup, see [Self-Hosting](/docs/self-hosting).
